@@ -40,11 +40,10 @@ convert() {
         checkpoint_name=$5
     fi
 
-    # downloaded ckpt
-    # e.g. ssd_mobilenet_v1_coco_2018_01_28.tar.gz
+    # ssd_mobilenet_v1_coco_2018_01_28.tar.gz
     tar_name=${wget_url##*/}
 
-    # e.g. ssd_mobilenet_v1_coco_2018_01_28
+    # ssd_mobilenet_v1_coco_2018_01_28
     cur_ckpt_dir_name=${tar_name%%.tar.gz*}
 
     cur_tar_path=${CHECKPOINT_PATH}/${tar_name}
@@ -70,29 +69,6 @@ convert() {
         return
     fi
 
-    # # Step 2: convert model.ckpt -> tflite.pb
-    # cur_ckpt_dir_path=${cur_ckpt_dir_path}/${checkpoint_sub}
-    # cur_pb_path=${cur_ckpt_dir_path}/tflite_graph.pb
-    # if [ ! -f "$cur_pb_path" ]; then
-    #     echo "Start to convert model.ckpt to tflite_graph.pb"
-    #     cd ${OBJECT_DETECTION_PATH}/..
-
-    #     # # remove `batch_norm_trainable: true` from ssd mobilenet v2 pipeline 
-    #     # sed -i '/batch_norm_trainable: true/d' ${cur_ckpt_dir_path}/pipeline.config
-
-    #     python object_detection/export_tflite_ssd_graph.py \
-    #         --pipeline_config_path ${cur_ckpt_dir_path}/pipeline.config \
-    #         --trained_checkpoint_prefix ${cur_ckpt_dir_path}/${checkpoint_name} \
-    #         --output_directory ${cur_ckpt_dir_path}
-    # else
-    #     echo "No need to convert ${cur_pb_path} since it already exists."
-    # fi
-
-    # if [ ! -f "$cur_pb_path" ]; then
-    #     echo "Error Generate ${cur_pb_path}" >> ${RESULT_FILE}
-    #     return
-    # fi
-
     # Step 2: convert model.ckpt -> tflite.pb -> detect.tflite
     tflite_path=${cur_ckpt_dir_path}/detect.tflite
     if [ ! -f "$tflite_path" ]; then
@@ -103,7 +79,6 @@ convert() {
         # remove `batch_norm_trainable: true` from ssd mobilenet v2 pipeline 
         sed -i '/batch_norm_trainable: true/d' ${cur_ckpt_dir_path}/pipeline.config
 
-        # convert model.ckpt -> tflite.pb
         echo "Start to convert model.ckpt to tflite_graph.pb"
         python object_detection/export_tflite_ssd_graph.py \
             --pipeline_config_path ${cur_ckpt_dir_path}/pipeline.config \
@@ -135,10 +110,12 @@ convert() {
     if [ ! -f "${tflite_path}" ]; then
         echo "Error Generate ${tflite_path}" >> ${RESULT_FILE}
         return
-    else
-        if [ ! -d "${TFLITE_SAVE_DIR}" ]; then
+    fi
+    if [ -d "${TFLITE_SAVE_DIR}" ]; then
+        tflite_save_path=${TFLITE_SAVE_DIR}/${cur_ckpt_dir_name}.tflite
+        if [ ! -f "${tflite_save_path}" ]; then
             echo "Saving .tflite to ${TFLITE_SAVE_DIR}"
-            cp $tflite_path ${TFLITE_SAVE_DIR}/${cur_ckpt_dir_name}.tflite
+            cp $tflite_path ${tflite_save_path}
         fi
     fi
     
